@@ -1,0 +1,244 @@
+---
+title: "Master en Big Data. Fundamentos Matemáticos del Análisis de Datos (FMAD)."
+author: "Departamento de Matemática Aplicada"
+date: 'Curso 2021-22. Última actualización: `r format(Sys.time(), "%Y-%m-%d")`'
+output:
+  html_document: default
+  pdf_document: default
+subtitle: Tarea 1
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instrucciones preliminares
+
++ Empieza abriendo el proyecto de RStudio correspondiente a tu repositorio personal de la asignatura. 
+
++ En todas las tareas tendrás que repetir un proceso como el descrito en la sección *Repite los pasos Creando un fichero Rmarkdown para esta práctica* de la *Práctica00*. Puedes releer la sección *Practicando la entrega de las Tareas* de esa misma práctica para recordar el procedimiento de entrega.
+
+# Ejercicio 0
+
++ Si no has hecho los *Ejercicios* de la *Práctica00* (págs. 12 y 13) hazlos ahora y añádelos a esta tarea. Si ya los has hecho y entregado a través de GitHub no hace falta que hagas nada.
+
+# Ejercicio 1. Análisis exploratorio de un conjunto de datos y operaciones con dplyr. 
+
++ Vamos a utilizar el conjunto de datos contenido en el fichero (es un enlace):  
+[cholesterol.csv](https://gist.githubusercontent.com/fsansegundo/ee991e53e1a571dd34034c42b5516eae/raw/2206455b5772e90c5a2a24a3f42a84408fd1d1c5/cholesterol.csv)  
+Los datos proceden de un estudio realizado en la *University of Virginia School of Medicine* que investiga la prevalencia de la obesidad, la diabetes y otros factores de riesgo cardiovascular. Se puede encontrar más información sobre el fichero en este enlace:  
+[https://biostat.app.vumc.org/wiki/pub/Main/DataSets/diabetes.html](https://biostat.app.vumc.org/wiki/pub/Main/DataSets/diabetes.html)  
+
++ Carga el conjunto de datos en un data.frame de R llamado `chlstrl`.
+
++ Empezaremos por información básica sobre el conjunto de datos. Cuántas observaciones contiene, cuáles son las variables y de qué tipos,...
+
++ Asegúrate de comprobar si hay datos ausentes y localízalos en la tabla. 
+
++ El análisis exploratorio (numérico y gráfico) debe cubrir todos los tipos de variable de la tabla. Es decir, que al menos debes estudiar una variable por cada tipo de variable presente en la tabla. El análisis debe contener, al menos:
+  - Para las variables cuantittativas (continuas o discretas).  
+    Resumen numérico básico.  
+    Gráficas (las adecuadas, a ser posible más de un tipo de gráfico).  
+  - Variables categóricas (factores).  
+    Tablas de frecuencia (absolutas y relativas).  
+    Gráficas (diagrama de barras).  
+
++ Los valores de `height` y `weight` están en pulgadas (inches) y libras (pounds) respectivamente. Una libra son $\approx$ 0.454kg y una pulgada son $\approx$ 0.0254m.  Usa dplyr para convertir esas columnas a metros y kilogramos respectivamente.  Las nuevas columnas deben llamarse igual que las originales. 
+
++ Ahora usa esos valores de `height` y `weight` para añadir una nueva columna llamada BMI, definida mediante:
+$$BMI = \dfrac{weight}{height^2}$$
+(se divide por el cuadrado de la altura). 
+
++ Crea una nueva columna llamada `ageGroup` dividiendo la edad en los siguientes tres niveles:
+  ```{r echo=FALSE, comment=NULL}
+  cat("(10,40], (40,70], (70,100]")
+  ```
+
++ Usando `dplyr` calcula cuántas observaciones hay en cada nivel de `ageGroup` (indicación: usa `group_by`). Ahora, usando aquellas observaciones que corresponden a mujeres, ¿cuál es la media del nivel de colesterol y de BMI en cada uno de esos grupos de edad?
+
+
+```{r}
+#Carga del fichero
+library(dplyr)
+library(ggplot2)
+chlstrl <-read.csv(url("https://gist.githubusercontent.com/fsansegundo/ee991e53e1a571dd34034c42b5516eae/raw/2206455b5772e90c5a2a24a3f42a84408fd1d1c5/cholesterol.csv"))
+#Información básica
+head(chlstrl)
+#Número de observaciones
+dim(chlstrl)
+#Variables y sus tipos
+summary(chlstrl)
+#Variables ausentes
+sum(is.na(chlstrl))
+
+#Análisis exploratorio de la variable chol
+summary(chlstrl$chol)
+hist(chlstrl$chol)
+
+#Análisis exploratorio de la variable age
+summary(chlstrl$age)
+hist(chlstrl$age)
+
+#Análisis exploratorio de la variable gender
+summary(chlstrl$gender)
+table(chlstrl$gender)
+barplot(table(chlstrl$gender),
+main="Gender",
+xlab="Age",
+ylab="Count",
+border="red",
+col="blue",
+density=10)
+#Análisis exploratorio de la variable height
+summary(chlstrl$height)
+hist(chlstrl$height)
+
+#Análisis exploratorio de la variable weight
+summary(chlstrl$weight)
+hist(chlstrl$weight)
+
+#Análisis exploratorio de la variable waist
+summary(chlstrl$waist)
+hist(chlstrl$waist)
+
+#Análisis exploratorio de la variable hip
+summary(chlstrl$hip)
+hist(chlstrl$hip)
+
+#Cambio de unidades
+chlstrl <- chlstrl %>% 
+  mutate("height" = height*0.0254, "weight" = weight*0.454)
+
+#BMI
+chlstrl <- chlstrl %>%
+  mutate("BMI" = weight/(height)^2)
+
+#ageGroup
+ chlstrl <- chlstrl %>%
+  mutate("ageGroup" = cut(age,breaks = seq(10,100,30)))
+ 
+#Número de observaciones por nivel
+chlstrl %>%
+  group_by(ageGroup) %>%
+  count()
+ 
+#Observaciones de mujeres
+chlstrl %>% 
+  group_by(ageGroup) %>% 
+  filter(gender == "female") %>% 
+  summarise(mean_col = mean(chol,na.rm=TRUE),mean_BMI = mean(BMI,na.rm=TRUE))
+```
+
+
+# Ejercicio 2: Funciones de R.
+
++ Crea una función de R llamada `cambiosSigno` que dado un vector `x` de números enteros no nulos, como 
+    ```{r echo=FALSE, comment=NULL}
+    set.seed(2019)
+    x = sample(c(-1, 1), 9, replace = TRUE) * sample(1:20, 9, replace = TRUE)
+    cat(paste0(x, sep=", "))
+    
+    cambioSigno <- function(vector_n){
+      res = 0
+      i=1
+      for (i in 2:length(vector_n)) {
+        if(vector_n[i] * vector_n[i-1] < 0){
+          res = res+1
+        }
+      }
+      return(res)
+    }
+    cambioSigno(x)
+    
+    ```
+  calcule cuántos cambios de signo ha habido. Es decir, cuántas veces el signo de un elemento es distinto del signo del elemento previo. Por ejemplo, en el vector anterior hay 4 cambios de signo (en las posiciones 3, 4, 7 y 8). 
+  
++ Modifica la función para que devuelva como resultado las posiciones donde hay cambios de signo. Llama `cambiosSignoPos(x)` a esa otra función. Por ejemplo, para el vector anterior el resultado de esta función sería
+    ```{r echo=FALSE, results='asis'}
+    cat("[1] 3 4 7 8")
+    cambioSignoPos <- function(vector_n){
+      res = c()
+      i=1
+      for (i in 2:length(vector_n)) {
+        if(vector_n[i] * vector_n[i-1] < 0){
+          res = append(res,i)
+        }
+      }
+      return(res)
+    }
+    cambioSignoPos(x)
+    ```
+    
+    También se valorará que incluyas en el código como usar `sample` para generar vectores aleatorios de 20 enteros *no nulos* (el vector debe poder tomar valores positivos y negativos).
+    
+```{r}
+vector_sample = sample(c(-10:-1,1:10),20,replace = TRUE)
+vector_sample
+cambioSigno(vector_sample)
+cambioSignoPos(vector_sample)
+```
+    
+
+# Ejercicio 3. R4DS.
+
+Es recomendable que esta semana del curso  hagas al menos una lectura somera de los Capítulos 1 a 5 de [R for Data Science (R4DS), de H. Wickham](https://r4ds.had.co.nz/index.html), con énfasis especial en los Capítulos 3 y 5 (los capítulos 1, 2 y 4 son muy breves). Los siguientes apartados pretenden motivar esa lectura y por eso mismo pueden resultar un poco más laboriosos.  
+
++ Haz el [ejercicio 6 de la Sección 3.6.1 de R4DS](https://r4ds.had.co.nz/data-visualisation.html#exercises-3).
+```{r}
+library(gridExtra)
+p1 <- ggplot(mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+p2 <- ggplot(mpg, mapping = aes(x = displ, y = hwy, group = drv)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+p3 <- ggplot(mpg, mapping = aes(x = displ, y = hwy, colour = drv)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+p4 <- ggplot() + 
+  geom_point(mpg, mapping = aes(x = displ, y = hwy, colour = drv)) + 
+  geom_smooth(mpg, mapping = aes(x = displ, y = hwy),se = FALSE)
+p5 <- ggplot() + 
+  geom_point(mpg, mapping = aes(x = displ, y = hwy, colour = drv)) + 
+  geom_smooth(mpg, mapping = aes(x = displ, y = hwy, linetype = drv),se = FALSE)
+p6 <- ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point(size = 4, color = "white") +
+  geom_point(aes(colour = drv))
+grid.arrange(p1,p2,p3,p4,p5,p6)
+```
+
++ Haz el [ejercicio 1 de la Sección 5.2.4 de R4DS](https://r4ds.had.co.nz/transform.html#exercises-8). 
+```{r}
+library(nycflights13)
+flights
+#LLegaron con 2 o más horas de retraso
+flights %>% 
+  filter(arr_delay >= 120)
+
+#Volaron a Houston
+flights %>% 
+  filter(dest == "IAH" | dest == "HOU")
+
+#Su operadora fue United, American o Delta:
+flights %>% 
+  filter(carrier %in% c("UA","AA","DL"))
+
+#Volaron en verano
+flights %>% 
+  filter(month %in% 7:9)
+
+#No salieron tarde pero llegaron más de 2 horas tarde
+flights %>% 
+  filter(arr_delay >= 120, dep_delay <= 0)
+
+#Se retrasaron por lo menos 1 hora, pero recuperaron media hora durante el vuelo
+flights %>% 
+  filter(dep_delay >= 60, dep_delay - arr_delay > 30)
+
+#Salieron entre medianoche y las 6 de la mañana
+flights %>% 
+  filter(dep_time <= 600 | dep_time == 2400)
+```
+
+
+
