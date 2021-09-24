@@ -1,0 +1,217 @@
+---
+title: "Master en Big Data. Fundamentos Matemáticos del Análisis de Datos (FMAD)."
+author: "Departamento de Matemática Aplicada"
+date: 'Curso 2021-22. Última actualización: `r format(Sys.time(), "%Y-%m-%d")`'
+output:
+  html_document: default
+  pdf_document: default
+subtitle: Tarea 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instrucciones preliminares
+
++ Empieza abriendo el proyecto de RStudio correspondiente a tu repositorio personal de la asignatura. 
+
++ En todas las tareas tendrás que repetir un proceso como el descrito en la sección *Repite los pasos Creando un fichero Rmarkdown para esta práctica* de la *Práctica00*. Puedes releer la sección *Practicando la entrega de las Tareas* de esa misma práctica para recordar el procedimiento de entrega.
+
+# Ejercicio 1. Simulando variables aleatorias discretas.
+
+**Apartado 1:** La variable aleatoria discreta $X1$ tiene esta tabla de densidad de probabilidad (es la variable que se usa como ejemplo en la Sesión ):
+$$
+\begin{array}{|c|c|c|c|c|c|c|}
+\hline
+\text{valor de }X1 & 0 & 1 & 2 & 3 \\
+\hline
+\text{Probabilidad de ese valor }P(X = x_i) & \dfrac{64}{125} &
+\dfrac{48}{125}& \dfrac{12}{125} & \dfrac{1}{125}\rule{0mm}{6mm} \\[3mm]
+\hline
+\end{array}
+$$
+
+Calcula la media y la varianza teóricas de esta variable.
+```{r}
+library(tidyverse)
+
+#Definimos la variable y calculamoa la media y varianza teórica
+val_x<- c(0,1,2,3)
+prob_x <- c(64/125, 48/125, 12/125, 1/125)
+x1<- data.frame(cbind(val_x,prob_x))
+#Media teórica
+media_teorica <- sum((x1$val_x)*(x1$prob_x))
+media_teorica
+
+#Varianza teórica
+varianza_teorica <- sum(((x1$val_x)^2 - media_teorica)*(x1$prob_x))
+varianza_teorica
+```
+
+
+**Apartado 2:**  Combina `sample` con `replicate` para simular cien mil muestras de tamaño 10 de esta variable $X1$. Estudia la distribución de las medias muestrales como hemos hecho en ejemplos previos, ilustrando con gráficas la distribución de esas medias muestrales. Cambia después el tamaño de la muestra a 30 y repite el análisis. 
+
+```{r}
+k = 100000
+n = 10
+mediasMuestralesX1 = replicate(k, { 
+  muestra = sample(x1$prob_x, n, replace = TRUE)
+  mean(muestra)
+})
+hist(mediasMuestralesX1, breaks = 40, main="", 
+     col="peachpuff", probability = TRUE, xlim=range(x1$prob_x))
+plot(density(mediasMuestralesX1, adjust = 1.5), main="")
+
+
+```
+  
+
+**Apartado 3:** La variable aleatoria discreta $X2$ tiene esta tabla de densidad de probabilidad:
+$$
+\begin{array}{|c|c|c|c|c|c|}
+\hline
+\text{valor de }X2 & 0 & 1 & 2 \\
+\hline
+\text{Probabilidad de ese valor }P(X = x_i) & \dfrac{1}{2} &
+\dfrac{1}{4}&  \dfrac{1}{4}\rule{0mm}{6mm} \\[3mm]
+\hline
+\end{array}
+$$
+Suponemos que $X1$ y $X2$ son independientes. ¿Qué valores puede tomar la suma $X1 + X2$? ¿Cuál es su tabla de probabilidad?
+
+```{r}
+val_x2<- c(0,1,2)
+prob_x2 <- c(1/2, 1/4, 1/2)
+x2<- data.frame(cbind(val_x2,prob_x2))
+prob_0 <- x1$prob_x[1] * x2$prob_x2[1]
+prob_0
+prob_1 <- sum(x1$prob_x[1] * x2$prob_x2[2],x1$prob_x[2] * x2$prob_x2[1] )
+prob_1
+prob_2 <- sum(x1$prob_x[1] * x2$prob_x2[3],x1$prob_x[3] * x2$prob_x2[1],x1$prob_x[2] * x2$prob_x2[2]  )
+prob_2
+prob_3<- sum(x1$prob_x[4] * x2$prob_x2[1],x1$prob_x[2] * x2$prob_x2[3],x1$prob_x[3] * x2$prob_x2[2]  )
+prob_3
+prob_4 <- sum(x1$prob_x[4] * x2$prob_x2[1],x1$prob_x[3] * x2$prob_x2[3] )
+prob_4
+prob_5 <- x1$prob_x[4] * x2$prob_x2[2]
+prob_5
+probabilid<- c(prob_0,prob_1,prob_2,prob_3,prob_4,prob_5)
+tabla_prob <- cbind(c(0:5), probabilid )
+tabla_probabilidades <- data.frame(tabla_prob)
+```
+
+
+**Apartado 4:** Calcula la media teórica de la suma $X_1 + X_2$. Después usa `sample` y `replicate` para simular cien mil *valores* de esta variable suma. Calcula la media de esos valores. *Advertencia:* no es el mismo tipo de análisis que hemos hecho en el segundo apartado. 
+
+```{r}
+media_teorica2 <- sum(tabla_probabilidades$V1 *(tabla_probabilidades$probabilid))
+media_teorica2
+k=100000
+n = 1
+mediasMuestral2 = replicate(k, { 
+  muestra2 = sample(tabla_probabilidades$probabilid, n, replace = TRUE)
+  mean(muestra2)
+})
+hist(mediasMuestral2, breaks = 40, main="", 
+     col="peachpuff", probability = TRUE, xlim=range(x1$prob_x))
+```
+
+# Ejercicio 2. Datos limpios
+
++ Descarga el fichero de este enlace  
+
+[https://gist.githubusercontent.com/fernandosansegundo/471b4887737cfcec7e9cf28631f2e21e/raw/b3944599d02df494f5903740db5acac9da35bc6f/testResults.csv](https://gist.githubusercontent.com/fernandosansegundo/471b4887737cfcec7e9cf28631f2e21e/raw/b3944599d02df494f5903740db5acac9da35bc6f/testResults.csv) 
+
++ Este fichero contiene las notas de los alumnos de una clase, que hicieron dos tests cada semana durante cinco semanas. La tabla de datos no cumple los principios de *tidy data* que hemos visto en clase. Tu tarea en este ejercicio es explicar por qué no se cumplen y obtener una tabla de datos limpios con la misma información usando *tidyR*.  
+**Indicación:** lee la ayuda de la función `separate` de *tidyR*.
+
+```{r}
+testResult <-read.csv(url('https://gist.githubusercontent.com/fernandosansegundo/471b4887737cfcec7e9cf28631f2e21e/raw/b3944599d02df494f5903740db5acac9da35bc6f/testResults.csv'))
+summary(testResult)
+library(tidyr)
+#No cumplen los principios de tidy data porque las filas de week no corresponden a observaciones
+(testResulTidys = testResult %>% 
+    pivot_longer(week1:week5, names_to = "week") %>%
+    separate(gender_age, c("gender", "age"), sep = "([_])")
+    )
+testResulTidys<- transform(testResulTidys, age = as.integer(age))
+head(testResulTidys)
+```
+
+
+
+# Ejercicio 3. Lectura de R4DS.
+
+Continuando con nuestra *lectura conjunta* de este libro, si revisas el índice verás que hemos cubierto (holgadamente en algún caso) el contenido de los Capítulos 6, 8, 9, 10 y 11. Todos esos Capítulos son relativamente ligeros.  Por eso esta semana conviene detenerse un poco en la lectura de los Capítulos 7 y 12, que son los más densos en información. Y como motivación os proponemos un par de ejercicios, uno por cada uno de esos capítulos. 
+
++ Haz el [ejercicio 2 de la Sección 7.5.1.1 de R4DS](https://r4ds.had.co.nz/exploratory-data-analysis.html#exercises-17). Las ideas de esa sección son importantes para nuestro trabajo de las próximas sesiones.
+
+```{r}
+library(tidyverse)
+library(deeplr)
+datos <- diamonds
+#Variable más importante para determinar el precio de un diamante
+#Carat sobre price
+ggplot(data = diamonds, mapping = aes(x = price, y =carat)) + 
+  geom_boxplot(mapping = aes(cut_width(carat , 0.8)), orientation = "x")
+
+#Color sobre price
+ggplot(data = diamonds, mapping = aes(x = price, y =color)) + 
+  geom_boxplot(mapping = aes(cut_width(color , 0.8)), orientation = "x")
+
+#Clarity sobre price
+ggplot(data = diamonds, mapping = aes(x = price, y =clarity)) + 
+  geom_boxplot(mapping = aes(cut_width(clarity , 0.8)), orientation = "x")
+
+print("Se observa que la variable principal que hace variar el precio es la variable Carat")
+```
+```{r}
+#Correlación con la vairble cut
+ggplot(data = diamonds, mapping = aes(x = price, y =cut)) + 
+  geom_boxplot()
+print("Como se puede ver en el boxplot parece que los diamantes de menor calidad tienden a presentar un coste mayor que los buenos o muy buenos pero menor que los premium, dando por hecho que los diamantes ideales son los que no se usan en joyería sino en trabajos industriales.")
+
+```
+
+```{r}
+#¿Por qué a menor calidad más caro?
+print("Habiendo realizado diversas búsquedas de información esto se debe a que la calidad del diamante en muchos estudios hace referencia a la pureza del mismo, sin embargo los diamantes más costosos son los que presentan alguna imperfección en su estructura, por ejemplo teniendo un átomo de algún otro elemento q le aporte un color o brillo determinado")
+```
+
++ Haz el [ejercicio 4 de la Sección 12.6.1 de R4DS](https://r4ds.had.co.nz/tidy-data.html#exercises-27). ¡Aprovecha el código previo de esa sección para trabajar con datos limpios!
+```{r}
+datos2 <- tidyr::who
+#limpieza de datos
+datos2 <- datos2 %>%
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  ) %>% 
+  mutate(
+    key = stringr::str_replace(key, "newrel", "new_rel")
+  ) %>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+#agrupación por sexo país y año
+datos3 <- datos2 %>%
+  group_by(country, year, sex) %>%
+  summarise(cases = sum(cases)) %>%
+  unite( country_sex, country, sex, remove = FALSE)
+
+#gráfica informativa
+datos4 <- datos3 %>%
+  filter(year>1995)
+  ggplot(datos4, aes(country, year))+
+    geom_line(aes(group=country_sex, colour=sex))
+  
+
+```
+
+
+
+
